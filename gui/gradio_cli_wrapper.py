@@ -1,4 +1,5 @@
 """Minimal Gradio front-end that wraps inference.py via subprocess."""
+
 from __future__ import annotations
 
 import shlex
@@ -81,6 +82,20 @@ def run_inference(
     force_cpu: bool,
     device_ids: str,
 ) -> str:
+    """Run inference.py as a subprocess and capture its output.
+
+    Args:
+        model_type: Model type to use.
+        config_path: Path to model config file.
+        start_check_point: Path to model checkpoint file.
+        input_folder: Path to input audio folder.
+        store_dir: Path to output folder.
+        extract_instrumental: Whether to extract instrumental track.
+        use_tta: Whether to use test-time augmentation.
+        force_cpu: Whether to force CPU usage.
+        device_ids: Device IDs to use.
+
+    """
     cmd = build_command(
         model_type=model_type,
         config_path=config_path,
@@ -125,11 +140,19 @@ def create_demo() -> gr.Blocks:
         )
 
         with gr.Row():
-            model_type = gr.Textbox(label="Model Type", value=DEFAULTS["model_type"], scale=1)
-            device_ids = gr.Textbox(label="Device IDs (e.g. 0 or 0 1)", value=DEFAULTS["device_ids"], scale=1)
+            model_type = gr.Textbox(
+                label="Model Type", value=DEFAULTS["model_type"], scale=1
+            )
+            device_ids = gr.Textbox(
+                label="Device IDs (e.g. 0 or 0 1)",
+                value=DEFAULTS["device_ids"],
+                scale=1,
+            )
 
         config_path = gr.Textbox(label="Config Path", value=DEFAULTS["config_path"])
-        checkpoint_path = gr.Textbox(label="Checkpoint Path", value=DEFAULTS["start_check_point"])
+        checkpoint_path = gr.Textbox(
+            label="Checkpoint Path", value=DEFAULTS["start_check_point"]
+        )
         input_folder = gr.Textbox(label="Input Folder", value=DEFAULTS["input_folder"])
         store_dir = gr.Textbox(label="Store Dir", value=DEFAULTS["store_dir"])
 
@@ -164,7 +187,7 @@ demo = create_demo()
 
 
 def main() -> None:
-    demo.launch()
+    demo.launch(mcp_server=True)
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ dependencies = [
   "hyper_connections==0.1.11",
   "sageattention==1.0.6",
   # UI / tool integration (Gradio 5.x includes MCP server support)
-  "gradio>=5.49.1,<6"
+  "gradio[mcp]>=5.49.1,<6",
 ]
 
 [project.optional-dependencies]
