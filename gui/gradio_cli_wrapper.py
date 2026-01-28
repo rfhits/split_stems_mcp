@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import shlex
-from typing import Iterator
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, Iterator, List
 
 import gradio as gr
 
@@ -71,6 +70,7 @@ def build_command(
 def _split_device_ids(value: str) -> Iterable[str]:
     return value.replace(",", " ").split()
 
+
 def run_inference(
     input_folder: str,
     store_dir: str,
@@ -92,13 +92,12 @@ def run_inference(
         this function may take a while to finish(about 1 min for a typical song), depending on the model and hardware you use.
         u can check the folder store_dir to see if the results are generated.
         feel free to do other things while waiting :)
+        you'd better use absolute path for folder to avoid confusion.
 
 
     Args:
-        input_folder(str): Path to input audio folder. all files under this folder will be processed.
-        you'd better use absolute path here to avoid confusion.
-        store_dir(str): Path to output folder. each file will have its own subfolder under store_dir to store the separated tracks.
-        you'd better use absolute path here to avoid confusion.
+        input_folder: Path to input audio folder. all files under this folder will be processed. you'd better use absolute path here to avoid confusion.
+        store_dir: Path to output folder. each file will have its own subfolder under store_dir to store the separated tracks. you'd better use absolute path here to avoid confusion.
         model_type: Model type to use.
         config_path: Path to model config file.
         start_check_point: Path to model checkpoint file.
