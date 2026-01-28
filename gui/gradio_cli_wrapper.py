@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shlex
+from typing import Iterator
 import subprocess
 import sys
 from pathlib import Path
@@ -70,26 +71,37 @@ def build_command(
 def _split_device_ids(value: str) -> Iterable[str]:
     return value.replace(",", " ").split()
 
-
 def run_inference(
-    model_type: str,
-    config_path: str,
-    start_check_point: str,
     input_folder: str,
     store_dir: str,
-    extract_instrumental: bool,
-    use_tta: bool,
-    force_cpu: bool,
-    device_ids: str,
+    model_type: str = DEFAULTS["model_type"],
+    config_path: str = DEFAULTS["config_path"],
+    start_check_point: str = DEFAULTS["start_check_point"],
+    extract_instrumental: bool = False,
+    use_tta: bool = False,
+    force_cpu: bool = False,
+    device_ids: str = DEFAULTS["device_ids"],
 ) -> str:
     """Run inference.py as a subprocess and capture its output.
+        audio file(song.wav/.mp3/etc) under input_folder will be separated into store_dir/song/{tracks}.wav
+
+        you may just need to fill in input_folder and store_dir,
+        leave other parameters as default for BS-RoFormer inference.
+
+        for agent:
+        this function may take a while to finish(about 1 min for a typical song), depending on the model and hardware you use.
+        u can check the folder store_dir to see if the results are generated.
+        feel free to do other things while waiting :)
+
 
     Args:
+        input_folder(str): Path to input audio folder. all files under this folder will be processed.
+        you'd better use absolute path here to avoid confusion.
+        store_dir(str): Path to output folder. each file will have its own subfolder under store_dir to store the separated tracks.
+        you'd better use absolute path here to avoid confusion.
         model_type: Model type to use.
         config_path: Path to model config file.
         start_check_point: Path to model checkpoint file.
-        input_folder: Path to input audio folder.
-        store_dir: Path to output folder.
         extract_instrumental: Whether to extract instrumental track.
         use_tta: Whether to use test-time augmentation.
         force_cpu: Whether to force CPU usage.
@@ -157,7 +169,9 @@ def create_demo() -> gr.Blocks:
         store_dir = gr.Textbox(label="Store Dir", value=DEFAULTS["store_dir"])
 
         with gr.Row():
-            extract_instrumental = gr.Checkbox(label="Extract Instrumental", value=True)
+            extract_instrumental = gr.Checkbox(
+                label="Extract Instrumental", value=False
+            )
             use_tta = gr.Checkbox(label="Use TTA (slower)", value=False)
             force_cpu = gr.Checkbox(label="Force CPU", value=False)
 
@@ -167,11 +181,11 @@ def create_demo() -> gr.Blocks:
         run_button.click(
             fn=run_inference,
             inputs=[
+                input_folder,
+                store_dir,
                 model_type,
                 config_path,
                 checkpoint_path,
-                input_folder,
-                store_dir,
                 extract_instrumental,
                 use_tta,
                 force_cpu,
