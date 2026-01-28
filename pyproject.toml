@@ -130,7 +130,7 @@ torchvision = [
 # - bs-roformer-cli: CLI around folder-based inference (current inference.py logic).
 # - bs-roformer-gradio: Gradio web UI (and MCP entry via Gradio's MCP support).
 bs-roformer-cli = "inference:proc_folder"
-bs-roformer-gradio = "gui.gradio_app:main"
+bs-roformer-gradio = "gui.gradio_cli_wrapper:main"
 
 [tool.setuptools]
 include-package-data = true

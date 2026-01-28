@@ -74,6 +74,32 @@ python inference.py \
 All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/utils/settings.py#L130).
 Convert models to ONNX and TensorRT formats [here](https://github.com/ZFTurbo/MSS_ONNX_TensorRT).
 
+## Gradio CLI Wrapper
+
+A minimal Gradio front-end can trigger inference without touching the existing CLI:
+
+```bash
+# launch the UI (opens on localhost)
+python -m gui.gradio_cli_wrapper
+
+# or via the script entry point
+uv run bs-roformer-gradio
+```
+
+Fill in the same parameters used by `split-by-bs-rofomer.sh` (model type, config, checkpoint,
+`input_folder`, `store_dir`), then click **Run**. The subprocess executes `inference.py` and logs
+stdout/stderr in the browser while writing separated stems into the provided `store_dir`.
+
+To expose the same interface as an MCP server:
+
+```bash
+python -m gradio mcp gui.gradio_cli_wrapper:demo
+```
+
+The MCP client passes identical fields; results remain on disk locally.
+ 
+note. download a Great BS-RoFormer checkpoints at [here](https://huggingface.co/jarredou/BS-ROFO-SW-Fixed/tree/main)
+
 ## Useful notes
 
 * All batch sizes in config are adjusted to use with single NVIDIA A6000 48GB. If you have less memory please adjust correspodningly in model config `training.batch_size` and `training.gradient_accumulation_steps`.
