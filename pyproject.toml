@@ -101,8 +101,8 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.uv.sources]
@@ -110,18 +110,18 @@ explicit = true
 # - `uv sync -E torch-cuda12` → 使用 CUDA 12.4 wheels
 # - `uv sync -E torch-cpu`    → 使用 CPU wheels
 torch = [
-  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
-  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+  { index = "pytorch-cu128", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu' and extra != 'torch-cuda12'" },
 ]
 
 torchaudio = [
-  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
-  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+  { index = "pytorch-cu128", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu' and extra != 'torch-cuda12'" },
 ]
 
 torchvision = [
-  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
-  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+  { index = "pytorch-cu128", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu' and extra != 'torch-cuda12'" },
 ]
 
 

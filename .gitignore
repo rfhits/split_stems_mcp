@@ -74,3 +74,10 @@ Scripts/
 
 results/
 wandb/
+
+# local split stem
+separated/
+audio/
+
+# checkpoints
+ckpt/
