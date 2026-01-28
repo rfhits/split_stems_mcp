@@ -1,0 +1,148 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "split-stems-mcp"
+version = "0.1.0"
+description = "BS-RoFormer based music stem separation with CLI, Gradio UI, and MCP server."
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+license = { file = "LICENSE" }
+authors = [
+  { name = "rfntts" }
+]
+keywords = ["audio", "music", "source-separation", "bs-roformer", "stems", "mcp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+# Core, platform-agnostic dependencies.
+# Derived from requirements-nogui.txt, with versions aligned to a known-working env (bs-rofomer-py310),
+# and still excluding torch / torchaudio / platform-specific wheels.
+dependencies = [
+  "numpy==2.2.6",
+  "pandas==2.3.3",
+  "scipy==1.15.3",
+  "soundfile==0.13.1",
+  "ml_collections==1.1.0",
+  "tqdm==4.67.1",
+  "segmentation_models_pytorch==0.3.3",
+  "timm==0.9.2",
+  "audiomentations==0.24.0",
+  "pedalboard==0.8.9",
+  "omegaconf==2.2.3",
+  "beartype==0.14.1",
+  "rotary_embedding_torch==0.3.5",
+  "einops==0.8.1",
+  "librosa==0.9.2",
+  "transformers==4.35.2",
+  "torchmetrics==0.11.4",
+  "spafe==0.3.2",
+  "protobuf==3.20.3",
+  "torch_audiomentations==0.12.0",
+  "asteroid==0.7.0",
+  "auraloss==0.4.0",
+  "torchseg==0.0.1a1",
+  "bitsandbytes==0.49.1",
+  "demucs==4.0.0",
+  "wandb==0.24.0",
+  "accelerate==1.12.0",
+  "huggingface-hub==0.36.0",
+  "prodigyopt==1.1.2",
+  "torch_log_wmse==0.3.0",
+  "loralib==0.1.2",
+  "keyboard==0.13.5",
+  "matplotlib==3.10.8",
+  "hyper_connections==0.1.11",
+  "sageattention==1.0.6",
+  # UI / tool integration (Gradio 5.x includes MCP server support)
+  "gradio>=5.49.1,<6"
+]
+
+[project.optional-dependencies]
+# Legacy desktop GUI based on wxPython.
+wx-gui = [
+  "wxpython==4.2.2",
+]
+
+# Torch variants as extras; users choose the appropriate one for their platform,
+# then run, for example: `uv sync -E torch-cuda12` or `uv sync -E torch-cpu`.
+#
+# 版本范围与当前可用环境对齐，但具体 wheel 源由 [tool.uv.sources] 控制，
+# 避免 uv 默认从 PyPI 拉 CPU-only / 不同 CUDA 的构建。
+torch-cpu = [
+  "torch>=2.10.0,<2.11",
+  "torchaudio>=2.10.0,<2.11",
+  "torchvision>=0.25.0,<0.26",
+]
+
+torch-cuda12 = [
+  "torch>=2.10.0,<2.11",
+  "torchaudio>=2.10.0,<2.11",
+  "torchvision>=0.25.0,<0.26",
+]
+
+torch-rocm = [
+  # 示例占位：使用者可以按自己的 ROCm 版本改成合适的 wheel 组合
+  "torch>=2.10.0,<2.11",
+  "torchaudio>=2.10.0,<2.11",
+  "torchvision>=0.25.0,<0.26",
+]
+
+[tool.uv]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+# 根据 extra 选择对应的 PyTorch index：
+# - `uv sync -E torch-cuda12` → 使用 CUDA 12.4 wheels
+# - `uv sync -E torch-cpu`    → 使用 CPU wheels
+torch = [
+  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+]
+
+torchaudio = [
+  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+]
+
+torchvision = [
+  { index = "pytorch-cu124", marker = "extra == 'torch-cuda12'" },
+  { index = "pytorch-cpu", marker = "extra == 'torch-cpu'" },
+]
+
+
+[project.scripts]
+# Entry points are designed for the future layout; they assume you will add the corresponding modules.
+# - bs-roformer-cli: CLI around folder-based inference (current inference.py logic).
+# - bs-roformer-gradio: Gradio web UI (and MCP entry via Gradio's MCP support).
+bs-roformer-cli = "inference:proc_folder"
+bs-roformer-gradio = "gui.gradio_app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = [
+  "audio",
+  "ckpt",
+  "configs",
+  "docs",
+  "separated",
+  "tests",
+  ".tasks",
+]
