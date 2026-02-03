@@ -1,27 +1,32 @@
 # coding: utf-8
-__author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
+__author__ = "Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/"
 
-import time
-import librosa
-import sys
-import os
 import glob
-import torch
-import soundfile as sf
+import os
+import sys
+import time
+
+import librosa
 import numpy as np
-from tqdm.auto import tqdm
+import soundfile as sf
+import torch
 import torch.nn as nn
+from tqdm.auto import tqdm
 
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from utils.audio_utils import normalize_audio, denormalize_audio, draw_spectrogram
-from utils.settings import get_model_from_config, parse_args_inference
-from utils.model_utils import demix
-from utils.model_utils import prefer_target_instrument, apply_tta, load_start_checkpoint
-
 import warnings
+
+from utils.audio_utils import denormalize_audio, draw_spectrogram, normalize_audio
+from utils.model_utils import (
+    apply_tta,
+    demix,
+    load_start_checkpoint,
+    prefer_target_instrument,
+)
+from utils.settings import get_model_from_config, parse_args_inference
 
 warnings.filterwarnings("ignore")
 
@@ -31,7 +36,7 @@ def run_folder(
     args: "argparse.Namespace",
     config: dict,
     device: "torch.device",
-    verbose: bool = False
+    verbose: bool = False,
 ) -> None:
     """
     Process a folder of audio files for source separation.
@@ -53,15 +58,20 @@ def run_folder(
     start_time = time.time()
     model.eval()
 
+    # direct use single file instead
+    if args.input_file:
+        mixture_paths = [os.path.abspath(args.input_file)]
     # Recursively collect all files from input directory
-    mixture_paths = sorted(
-        glob.glob(os.path.join(args.input_folder, "**/*.*"), recursive=True)
-    )
-    mixture_paths = [p for p in mixture_paths if os.path.isfile(p)]
+    # mixture_paths = sorted(
+    #     glob.glob(os.path.join(args.input_folder, "**/*.*"), recursive=True)
+    # )
+    # mixture_paths = [p for p in mixture_paths if os.path.isfile(p)]
 
     sample_rate: int = getattr(config.audio, "sample_rate", 44100)
 
-    print(f"Total files found: {len(mixture_paths)}. Using sample rate: {sample_rate}")
+    print(
+        f"Total files found: {len(mixture_paths)}\n{mixture_paths}. Using sample rate: {sample_rate}"
+    )
 
     instruments: list[str] = prefer_target_instrument(config)[:]
     os.makedirs(args.store_dir, exist_ok=True)
@@ -107,23 +117,13 @@ def run_folder(
 
         # Perform source separation
         waveforms_orig = demix(
-            config,
-            model,
-            mix,
-            device,
-            model_type=args.model_type,
-            pbar=detailed_pbar
+            config, model, mix, device, model_type=args.model_type, pbar=detailed_pbar
         )
 
         # Apply test-time augmentation if enabled
         if args.use_tta:
             waveforms_orig = apply_tta(
-                config,
-                model,
-                mix,
-                waveforms_orig,
-                device,
-                args.model_type
+                config, model, mix, waveforms_orig, device, args.model_type
             )
 
         # Extract instrumental track if requested
@@ -142,7 +142,7 @@ def run_folder(
                     estimates = denormalize_audio(estimates, norm_params)
 
             peak: float = float(np.abs(estimates).max())
-            if peak <= 1.0 and args.pcm_type != 'FLOAT':
+            if peak <= 1.0 and args.pcm_type != "FLOAT":
                 codec = "flac"
             else:
                 codec = "wav"
@@ -157,9 +157,7 @@ def run_folder(
                 file_name=file_name,
                 dir_name=dir_name,
                 model_type=args.model_type,
-                model=os.path.splitext(
-                    os.path.basename(args.start_check_point)
-                )[0],
+                model=os.path.splitext(os.path.basename(args.start_check_point))[0],
             )
 
             # Create output directory
@@ -177,17 +175,19 @@ def run_folder(
 
     print(f"Elapsed time: {time.time() - start_time:.2f} seconds.")
 
+
 def format_filename(template, **kwargs):
-    '''
+    """
     Formats a filename from a template. e.g "{file_name}/{instr}"
     Using slashes ('/') in template will result in directories being created
     Returns [dirnames, fname], i.e. an array of dir names and a single file name
-    '''
+    """
     result = template
     for k, v in kwargs.items():
         result = result.replace(f"{{{k}}}", str(v))
     *dirnames, fname = result.split("/")
     return dirnames, fname
+
 
 def proc_folder(dict_args):
     args = parse_args_inference(dict_args)
@@ -195,8 +195,12 @@ def proc_folder(dict_args):
     if args.force_cpu:
         device = "cpu"
     elif torch.cuda.is_available():
-        print('CUDA is available, use --force_cpu to disable it.')
-        device = f'cuda:{args.device_ids[0]}' if isinstance(args.device_ids, list) else f'cuda:{args.device_ids}'
+        print("CUDA is available, use --force_cpu to disable it.")
+        device = (
+            f"cuda:{args.device_ids[0]}"
+            if isinstance(args.device_ids, list)
+            else f"cuda:{args.device_ids}"
+        )
     elif torch.backends.mps.is_available():
         device = "mps"
 
@@ -206,16 +210,22 @@ def proc_folder(dict_args):
     torch.backends.cudnn.benchmark = True
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-    if 'model_type' in config.training:
+    if "model_type" in config.training:
         args.model_type = config.training.model_type
     if args.start_check_point:
-        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
-        load_start_checkpoint(args, model, checkpoint, type_='inference')
+        checkpoint = torch.load(
+            args.start_check_point, weights_only=False, map_location="cpu"
+        )
+        load_start_checkpoint(args, model, checkpoint, type_="inference")
 
     print("Instruments: {}".format(config.training.instruments))
 
     # in case multiple CUDA GPUs are used and --device_ids arg is passed
-    if isinstance(args.device_ids, list) and len(args.device_ids) > 1 and not args.force_cpu:
+    if (
+        isinstance(args.device_ids, list)
+        and len(args.device_ids) > 1
+        and not args.force_cpu
+    ):
         model = nn.DataParallel(model, device_ids=args.device_ids)
 
     model = model.to(device)

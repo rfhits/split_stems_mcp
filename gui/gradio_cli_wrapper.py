@@ -17,7 +17,7 @@ DEFAULTS = {
     "model_type": "bs_roformer",
     "config_path": "ckpt/bs_rofomer/BS-Rofo-SW-Fixed.yaml",
     "start_check_point": "ckpt/bs_rofomer/BS-Rofo-SW-Fixed.ckpt",
-    "input_folder": "audio/",
+    "input_file": "audio/sea.wav",
     "store_dir": "separated/",
     "device_ids": "0",
 }
@@ -28,7 +28,7 @@ def build_command(
     model_type: str,
     config_path: str,
     start_check_point: str,
-    input_folder: str,
+    input_file: str,
     store_dir: str,
     extract_instrumental: bool,
     use_tta: bool,
@@ -46,8 +46,8 @@ def build_command(
         config_path,
         "--start_check_point",
         start_check_point,
-        "--input_folder",
-        input_folder,
+        "--input_file",
+        input_file,
         "--store_dir",
         store_dir,
     ]
@@ -72,7 +72,7 @@ def _split_device_ids(value: str) -> Iterable[str]:
 
 
 def run_inference(
-    input_folder: str,
+    input_file: str,
     store_dir: str,
     model_type: str = DEFAULTS["model_type"],
     config_path: str = DEFAULTS["config_path"],
@@ -83,9 +83,9 @@ def run_inference(
     device_ids: str = DEFAULTS["device_ids"],
 ) -> str:
     """Run inference.py as a subprocess and capture its output.
-        audio file(song.wav/.mp3/etc) under input_folder will be separated into store_dir/song/{tracks}.wav
+        audio file(song.wav/.mp3/etc) will be separated into store_dir/song/{tracks}.wav
 
-        you may just need to fill in input_folder and store_dir,
+        you may just need to fill in input_file and store_dir,
         leave other parameters as default for BS-RoFormer inference.
 
         for agent:
@@ -96,8 +96,8 @@ def run_inference(
 
 
     Args:
-        input_folder: Path to input audio folder. all files under this folder will be processed. you'd better use absolute path here to avoid confusion.
-        store_dir: Path to output folder. each file will have its own subfolder under store_dir to store the separated tracks. you'd better use absolute path here to avoid confusion.
+        input_file: Path to input audio file.
+        store_dir: Path to output folder. file will have its own subfolder under store_dir to store the separated tracks. you'd better use absolute path here to avoid confusion. Attention: you'd better can an empty folder for this argument to avoid mixing old and new results.
         model_type: Model type to use.
         config_path: Path to model config file.
         start_check_point: Path to model checkpoint file.
@@ -107,11 +107,13 @@ def run_inference(
         device_ids: Device IDs to use.
 
     """
+    if input_file == store_dir:
+        return "Error: input_file and store_dir must be different to avoid overwriting files."
     cmd = build_command(
         model_type=model_type,
         config_path=config_path,
         start_check_point=start_check_point,
-        input_folder=input_folder,
+        input_file=input_file,
         store_dir=store_dir,
         extract_instrumental=extract_instrumental,
         use_tta=use_tta,
@@ -164,7 +166,7 @@ def create_demo() -> gr.Blocks:
         checkpoint_path = gr.Textbox(
             label="Checkpoint Path", value=DEFAULTS["start_check_point"]
         )
-        input_folder = gr.Textbox(label="Input Folder", value=DEFAULTS["input_folder"])
+        input_file = gr.Textbox(label="Input File", value=DEFAULTS["input_file"])
         store_dir = gr.Textbox(label="Store Dir", value=DEFAULTS["store_dir"])
 
         with gr.Row():
@@ -180,7 +182,7 @@ def create_demo() -> gr.Blocks:
         run_button.click(
             fn=run_inference,
             inputs=[
-                input_folder,
+                input_file,
                 store_dir,
                 model_type,
                 config_path,
@@ -200,7 +202,7 @@ demo = create_demo()
 
 
 def main() -> None:
-    demo.launch(mcp_server=True)
+    demo.launch(mcp_server=True, server_port=7867)
 
 
 if __name__ == "__main__":
